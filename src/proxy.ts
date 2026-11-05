@@ -6,7 +6,17 @@ import { SESSION_COOKIE_NAME } from "@/lib/auth/constants";
  * login page. It does not trust the cookie — every page, route handler and
  * service validates the session against the database before doing anything.
  */
-const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/auth/logout", "/api/health", "/api/cron"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/forgot-password",
+  "/api/auth/login",
+  "/api/auth/logout",
+  "/api/auth/forgot-password",
+  "/api/auth/verify-otp",
+  "/api/auth/reset-password",
+  "/api/health",
+  "/api/cron",
+];
 
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;

@@ -55,6 +55,8 @@ export type EmailContent = {
   intro: string;
   rows?: EmailRow[];
   cta?: { label: string; url: string };
+  /** A one-time code shown large and monospaced below the intro. */
+  code?: string;
   footer?: string;
   /** Hidden inbox preview text; defaults to the intro. */
   preheader?: string;
@@ -90,6 +92,12 @@ export function renderEmail(content: EmailContent): RenderedEmail {
         )}</a></td></tr></table>`
       : "";
 
+  const codeHtml = content.code
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:22px 0 6px"><tr><td style="background:${BG};border:1px solid ${BORDER};border-radius:10px;padding:14px 22px;font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:30px;font-weight:700;letter-spacing:8px;color:${TEXT}">${escapeHtml(
+        content.code,
+      )}</td></tr></table>`
+    : "";
+
   const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -107,7 +115,7 @@ export function renderEmail(content: EmailContent): RenderedEmail {
 <tr><td style="background:#ffffff;border-radius:12px;border-top:4px solid ${BRAND};padding:28px 24px;box-shadow:0 1px 3px rgba(17,24,39,.06)">
 <h1 style="margin:0 0 12px;font-size:20px;line-height:1.35;color:${TEXT}">${escapeHtml(content.heading)}</h1>
 <p style="margin:0;font-size:15px;line-height:1.6;color:${TEXT}">${escapeMultiline(content.intro)}</p>
-${rowsHtml}${ctaHtml}
+${codeHtml}${rowsHtml}${ctaHtml}
 </td></tr>
 <tr><td style="padding:16px 4px 0;font-size:12px;line-height:1.5;color:${MUTED}">${escapeMultiline(footer)}</td></tr>
 </table>
@@ -122,6 +130,7 @@ ${rowsHtml}${ctaHtml}
     content.heading,
     "",
     content.intro,
+    ...(content.code ? ["", `Code: ${content.code}`] : []),
     ...(rows.length ? ["", ...rows.map((r) => `${r.label}: ${r.value}`)] : []),
     ...(content.cta && ctaUrl ? ["", `${content.cta.label}: ${ctaUrl}`] : []),
     "",
@@ -183,6 +192,48 @@ export function leadFollowUpEmail(input: {
         { label: "Follow-up", value: `${when} IST` },
       ],
       cta: { label: "Open lead", url: `/leads/${encodeURIComponent(input.leadId)}` },
+    }),
+  };
+}
+
+export function passwordResetOtpEmail(input: {
+  companyName: string;
+  recipientName: string;
+  otp: string;
+  validMinutes: number;
+}): EmailWithSubject {
+  return {
+    subject: "Your password reset code",
+    ...renderEmail({
+      companyName: input.companyName,
+      heading: "Reset your password",
+      intro: `Hi ${input.recipientName}, use this code to reset your CRM password. It expires in ${input.validMinutes} minutes and can be used once.`,
+      code: input.otp,
+      preheader: `Your password reset code expires in ${input.validMinutes} minutes.`,
+      footer:
+        "If you did not ask to reset your password, you can ignore this email — your password will not change. Never share this code with anyone, including RDS staff.",
+    }),
+  };
+}
+
+export function passwordResetDoneEmail(input: {
+  companyName: string;
+  recipientName: string;
+  changedAt: Date | string;
+  ipAddress?: string;
+}): EmailWithSubject {
+  return {
+    subject: "Your password was changed",
+    ...renderEmail({
+      companyName: input.companyName,
+      heading: "Password changed",
+      intro: `Hi ${input.recipientName}, the password for your CRM account was just reset. You have been signed out on all devices.`,
+      rows: [
+        { label: "When", value: `${formatDateTime(input.changedAt)} IST` },
+        { label: "IP address", value: input.ipAddress ?? "" },
+      ],
+      cta: { label: "Sign in", url: "/login" },
+      footer: "If you did not do this, contact your administrator immediately so the account can be secured.",
     }),
   };
 }

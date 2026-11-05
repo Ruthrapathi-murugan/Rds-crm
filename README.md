@@ -102,7 +102,7 @@ All variables are documented in [.env.example](.env.example) and validated on fi
 | `MONGODB_URI` | yes | MongoDB connection string including the database name |
 | `AUTH_SECRET` | yes | Secret used to protect session tokens, 32+ characters |
 | `APP_URL` | yes | Public base URL (no trailing slash), used in emails |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` | no | Outgoing email (invoices, reminders). Leave `SMTP_HOST` empty to disable |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` | no | Outgoing email (invoices, reminders, password-reset codes). Leave `SMTP_HOST` empty to disable — self-service password reset then cannot deliver codes |
 | `CRON_SECRET` | for reminders | Bearer token for `/api/cron/reminders`, 16+ characters |
 
 Generate secrets:
@@ -190,7 +190,8 @@ Every collection's indexes are declared on its Mongoose model in [src/models](sr
 | `MongoServerSelectionError` / timeouts | Atlas Network Access does not include the server IP (add `0.0.0.0/0` for Vercel), wrong password (URL-encode special characters), or cluster paused. |
 | `Transaction numbers are only allowed on a replica set member` | You are using a standalone MongoDB. Use Atlas or `npm run dev:db`. |
 | Signed out immediately after login | `AUTH_SECRET` differs between deployments/instances, or the site is served over plain HTTP in production (the `__Host-` cookie requires HTTPS). |
-| "Too many sign-in attempts" | Login is limited to 8 attempts per email+IP and 30 per IP every 15 minutes. Wait, or an admin can reset the password. |
+| "Too many sign-in attempts" | Login is limited to 8 attempts per email+IP and 30 per IP every 15 minutes. Wait, use **Forgot password?**, or ask an admin to reset the password. |
+| Password-reset code never arrives | SMTP is not configured or the provider rejected the message — check **EmailLog** entries with template `password_reset_otp` (status `not_configured` / `failed`). Codes can be re-requested once a minute and 5 times an hour per email. |
 | GST options missing on invoices | Mark the business as GST-registered and enter the GSTIN and state in **Settings**. |
 | "x% is not one of the tax rates configured" | Add or re-activate that rate in **Settings → Tax rates**. |
 | Email button missing / "Email is not configured" | Set all SMTP variables and `MAIL_FROM`, then redeploy. Check the provider's SMTP logs for authentication errors. |
@@ -205,7 +206,7 @@ Every collection's indexes are declared on its Mongoose model in [src/models](sr
 - **Numbering**: `PREFIX/26-27/0001` (≤ 16 characters, restarts each 1 April IST). Invoice numbers are assigned only when a draft is issued, inside a transaction, so drafts and failed attempts never leave gaps.
 - **Financial definitions** (used identically by the dashboard, reports and CSVs): *Invoiced* = issued invoices (sent / partially paid / paid) by invoice date; *Received* = recorded payments by payment date; *Outstanding* = balance of sent / partially paid invoices; *Overdue* = outstanding past the due date (IST).
 - **Dates** are stored in UTC and displayed, grouped and bounded ("today", "this month") in Asia/Kolkata.
-- **Security**: database-backed sessions (only an HMAC of the token is stored), scrypt password hashing, login rate limiting, server-side permission checks on every route and page, record-level scoping for Staff, CSRF origin checks, strict Zod validation (unknown fields stripped), security headers, CSV formula-injection protection, HTML escaping in emails, and an append-only audit log for sign-ins, permission changes and money events.
+- **Security**: database-backed sessions (only an HMAC of the token is stored), scrypt password hashing, login rate limiting, self-service password reset by 6-digit email OTP (HMAC-stored, 5-minute expiry, 5 attempts, 60-second resend cooldown, identical responses for unknown emails, all sessions revoked on reset), server-side permission checks on every route and page, record-level scoping for Staff, CSRF origin checks, strict Zod validation (unknown fields stripped), security headers, CSV formula-injection protection, HTML escaping in emails, and an append-only audit log for sign-ins, permission changes and money events.
 
 ## Project structure
 

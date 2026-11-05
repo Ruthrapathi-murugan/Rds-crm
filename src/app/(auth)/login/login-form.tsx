@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -97,7 +98,15 @@ export function LoginForm() {
           name="password"
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor="password">Password</FieldLabel>
+              <div className="flex items-center justify-between gap-2">
+                <FieldLabel htmlFor="password">Password</FieldLabel>
+                <Link
+                  href="/forgot-password"
+                  className="text-primary text-xs font-medium underline-offset-4 hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <InputGroup className="h-11">
                 <InputGroupAddon>
                   <Lock className="size-4" aria-hidden="true" />
@@ -134,7 +143,7 @@ export function LoginForm() {
         {submitting ? "Signing in…" : "Sign in"}
       </Button>
       <p className="text-muted-foreground text-center text-xs">
-        Accounts are created by your administrator. Forgot your password? Ask an admin to reset it.
+        Accounts are created by your administrator.
       </p>
     </form>
   );
