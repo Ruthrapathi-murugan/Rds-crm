@@ -43,9 +43,12 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,
-  // PDF fonts are read from disk at runtime; ship them with the API functions.
+  // PDF fonts and the logo are read from disk at runtime; ship them with the API functions.
   outputFileTracingIncludes: {
-    "/api/**": ["./node_modules/@fontsource/noto-sans/files/noto-sans-latin*-{400,600,700}-normal.woff"],
+    "/api/**": [
+      "./node_modules/@fontsource/noto-sans/files/noto-sans-latin*-{400,600,700}-normal.woff",
+      "./public/brand/logo.{png,jpg,jpeg}",
+    ],
   },
   turbopack: {
     rules: {

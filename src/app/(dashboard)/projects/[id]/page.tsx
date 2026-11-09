@@ -212,7 +212,7 @@ async function ProjectDetail({ params }: { params: Promise<{ id: string }> }) {
                   { label: "Quoted", value: f.quotedPaise, strong: true },
                   { label: "Advance agreed", value: f.advanceAgreedPaise },
                   { label: "Invoiced", value: f.invoicedPaise },
-                  { label: "Received", value: f.receivedPaise, tone: "text-emerald-700" },
+                  { label: "Received", value: f.receivedPaise, tone: "text-emerald-700 dark:text-emerald-400" },
                 ].map((row) => (
                   <div key={row.label} className="flex items-baseline justify-between gap-3">
                     <dt className="text-muted-foreground">{row.label}</dt>
@@ -228,7 +228,7 @@ async function ProjectDetail({ params }: { params: Promise<{ id: string }> }) {
               )}
               <div className="bg-muted/50 flex items-baseline justify-between gap-3 rounded-lg px-3 py-2.5">
                 <span className="text-sm font-medium">Remaining</span>
-                <span className={cn("text-lg font-semibold tabular-nums", f.remainingPaise > 0 ? "text-foreground" : "text-emerald-700")}>
+                <span className={cn("text-lg font-semibold tabular-nums", f.remainingPaise > 0 ? "text-foreground" : "text-emerald-700 dark:text-emerald-400")}>
                   {formatINR(f.remainingPaise)}
                 </span>
               </div>

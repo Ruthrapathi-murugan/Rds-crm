@@ -60,10 +60,10 @@ function Note({ children, tone = "info" }: { children: React.ReactNode; tone?: "
     <div
       className={cn(
         "flex gap-2.5 rounded-lg border px-3 py-2.5 text-sm",
-        tone === "info" ? "border-primary/20 bg-primary/5" : "border-amber-200 bg-amber-50 text-amber-950",
+        tone === "info" ? "border-primary/20 bg-primary/5" : "border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100",
       )}
     >
-      <Info className={cn("mt-0.5 size-4 shrink-0", tone === "info" ? "text-primary" : "text-amber-600")} aria-hidden="true" />
+      <Info className={cn("mt-0.5 size-4 shrink-0", tone === "info" ? "text-primary" : "text-amber-600 dark:text-amber-400")} aria-hidden="true" />
       <div className="flex flex-col gap-1 text-pretty">{children}</div>
     </div>
   );

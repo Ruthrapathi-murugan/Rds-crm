@@ -52,8 +52,8 @@ export function DocumentPreview({
           aria-hidden="true"
           className={cn(
             "pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 -rotate-[24deg] text-7xl font-black tracking-widest opacity-[0.07] select-none",
-            stamp.tone === "danger" && "text-red-600",
-            stamp.tone === "success" && "text-emerald-600",
+            stamp.tone === "danger" && "text-red-600 dark:text-red-400",
+            stamp.tone === "success" && "text-emerald-600 dark:text-emerald-400",
           )}
         >
           {stamp.label}

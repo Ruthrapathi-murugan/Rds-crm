@@ -1,9 +1,10 @@
 import "server-only";
-import { Document, Page, Text, View } from "@react-pdf/renderer";
+import { Document, Image, Page, Text, View } from "@react-pdf/renderer";
 import { amountInWords } from "@/lib/utils/amount-words";
 import { formatDate, formatDateTime } from "@/lib/utils/date";
 import { formatINR } from "@/lib/utils/money";
 import type { PdfSeller } from "./document-pdf";
+import { ContactFooter } from "./contact-footer";
 import { PDF_COLORS, pdfStyles as s } from "./styles";
 
 export type ReceiptPdfProps = {
@@ -35,23 +36,31 @@ export function ReceiptPdf(props: ReceiptPdfProps) {
 
   return (
     <Document title={`Payment receipt ${props.paymentNumber}`} author={props.seller.name} creator="RDS CRM">
-      <Page size="A5" orientation="landscape" style={s.page}>
-        <View style={s.brandBar} />
+      <Page size="A5" orientation="landscape" style={[s.page, { paddingTop: 28, paddingBottom: 66 }]}>
         {props.voided && <Text style={[s.stamp, { top: 140, left: 140, color: PDF_COLORS.danger }]}>VOID</Text>}
-        <View style={[s.between, { marginBottom: 14 }]}>
-          <View style={{ width: "60%" }}>
-            <Text style={s.companyName}>{props.seller.name}</Text>
-            {[props.seller.address, [props.seller.phone, props.seller.email].filter(Boolean).join(" · "), props.seller.gstin ? `GSTIN: ${props.seller.gstin}` : ""]
+        {/* Header: logo, title and number on the left; seller details on the right */}
+        <View style={[s.between, { alignItems: "flex-start", marginBottom: 14 }]}>
+          <View style={[s.row, { width: "45%", alignItems: "center", gap: 10 }]}>
+            {props.seller.logo ? (
+              // eslint-disable-next-line jsx-a11y/alt-text -- react-pdf's Image has no alt prop
+              <Image src={props.seller.logo} style={[s.logo, { width: 44, height: 44 }]} />
+            ) : null}
+            <View>
+              <Text style={[s.docTitle, { fontSize: 18 }]}>PAYMENT RECEIPT</Text>
+              <Text style={s.docNumber}>
+                <Text style={s.bold}>Receipt No:</Text> {props.paymentNumber}
+              </Text>
+            </View>
+          </View>
+          <View style={{ width: "53%", alignItems: "flex-end" }}>
+            <Text style={[s.sellerName, { fontSize: 14 }]}>{props.seller.name}</Text>
+            {[props.seller.address, props.seller.phone ? `Ph: ${props.seller.phone}` : "", props.seller.email, props.seller.gstin ? `GSTIN: ${props.seller.gstin}` : ""]
               .filter(Boolean)
               .map((line) => (
-                <Text key={line} style={[s.muted, { marginTop: 2 }]}>
+                <Text key={line} style={[s.sellerLine, { fontSize: 8.5 }]}>
                   {line}
                 </Text>
               ))}
-          </View>
-          <View style={{ alignItems: "flex-end" }}>
-            <Text style={s.title}>PAYMENT RECEIPT</Text>
-            <Text style={[s.semibold, { marginTop: 6 }]}>{props.paymentNumber}</Text>
           </View>
         </View>
 
@@ -83,10 +92,17 @@ export function ReceiptPdf(props: ReceiptPdfProps) {
             <Text style={s.muted}>{props.notes}</Text>
           </View>
         ) : null}
-        <View style={s.footer} fixed>
-          <Text>Thank you for your payment.</Text>
-          <Text>Computer-generated receipt · recorded {formatDateTime(props.recordedAt)}</Text>
-        </View>
+        <ContactFooter
+          location={props.seller.location}
+          email={props.seller.email}
+          website={props.seller.website}
+          meta={
+            <>
+              <Text>Thank you for your payment.</Text>
+              <Text>Computer-generated receipt · recorded {formatDateTime(props.recordedAt)}</Text>
+            </>
+          }
+        />
       </Page>
     </Document>
   );

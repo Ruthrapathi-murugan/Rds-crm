@@ -37,9 +37,9 @@ const CATEGORY_ICONS: Record<ServiceCategory, LucideIcon> = {
 };
 
 const CATEGORY_ACCENTS: Record<ServiceCategory, string> = {
-  web_development: "bg-sky-500/10 text-sky-700",
-  hotel_management: "bg-amber-500/10 text-amber-700",
-  digital_marketing: "bg-violet-500/10 text-violet-700",
+  web_development: "bg-sky-500/10 text-sky-700 dark:bg-sky-500/15 dark:text-sky-400",
+  hotel_management: "bg-amber-500/10 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400",
+  digital_marketing: "bg-violet-500/10 text-violet-700 dark:bg-violet-500/15 dark:text-violet-400",
 };
 
 /** Active rates for the picker, one entry per rate. */

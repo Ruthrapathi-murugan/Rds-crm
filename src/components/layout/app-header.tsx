@@ -6,6 +6,7 @@ import type { Role } from "@/lib/constants";
 import type { Permission } from "@/lib/permissions";
 import { GlobalSearch } from "./global-search";
 import { NotificationsBell } from "./notifications-bell";
+import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 
 export function AppHeader({
@@ -19,6 +20,7 @@ export function AppHeader({
       <Separator orientation="vertical" className="mr-1 data-[orientation=vertical]:h-5" />
       <GlobalSearch permissions={user.permissions} />
       <div className="ml-auto flex items-center gap-1">
+        <ThemeToggle />
         <NotificationsBell />
         <UserMenu name={user.name} email={user.email} role={user.role} />
       </div>

@@ -373,7 +373,7 @@ export function DocumentEditor({
               </p>
             )}
             {suggested && suggested !== taxMode && (
-              <p className="flex gap-2 rounded-md bg-amber-50 p-2 text-xs text-amber-900">
+              <p className="flex gap-2 rounded-md bg-amber-50 p-2 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
                 <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
                 Suggested for this customer&apos;s state: {TAX_MODE_LABELS[suggested]}.
               </p>
@@ -412,7 +412,7 @@ function Row({ label, value }: { label: string; value: number | undefined }) {
   return (
     <div className="flex items-center justify-between">
       <dt className="text-muted-foreground">{label}</dt>
-      <dd className={cn("tabular-nums", value !== undefined && value < 0 && "text-emerald-700")}>
+      <dd className={cn("tabular-nums", value !== undefined && value < 0 && "text-emerald-700 dark:text-emerald-400")}>
         {value === undefined ? "—" : value < 0 ? `− ${formatINR(-value)}` : formatINR(value)}
       </dd>
     </div>

@@ -6,12 +6,25 @@
  *
  * Then set in .env.local:
  *   MONGODB_URI=mongodb://127.0.0.1:27017/rds_crm?replicaSet=rds-local
+ *
+ * The port comes from DEV_DB_PORT, else from a local MONGODB_URI in
+ * .env.local, else 27017. The replica set config saved in .data/mongo records
+ * the port it was first started on, so keep using the same one (a mismatch
+ * fails with "connection … closed").
  */
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 
-const port = Number(process.env.DEV_DB_PORT ?? 27017);
+function portFromEnvFile(): number | undefined {
+  const envFile = path.resolve(".env.local");
+  if (!existsSync(envFile)) return undefined;
+  process.loadEnvFile(envFile);
+  const match = process.env.MONGODB_URI?.match(/^mongodb:\/\/(?:127\.0\.0\.1|localhost):(\d+)\//);
+  return match ? Number(match[1]) : undefined;
+}
+
+const port = Number(process.env.DEV_DB_PORT ?? portFromEnvFile() ?? 27017);
 const dbPath = path.resolve(".data/mongo");
 mkdirSync(dbPath, { recursive: true });
 

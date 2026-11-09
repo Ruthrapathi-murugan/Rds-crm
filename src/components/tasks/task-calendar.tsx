@@ -16,10 +16,26 @@ const MONTHS = ["January", "February", "March", "April", "May", "June", "July", 
 
 /** Priority chip styles. Each chip also carries a letter, so colour never stands alone. */
 const CHIP: Record<Priority, { chip: string; tag: string; letter: string }> = {
-  low: { chip: "bg-slate-50 text-slate-700 ring-slate-200", tag: "bg-slate-200 text-slate-700", letter: "L" },
-  medium: { chip: "bg-sky-50 text-sky-900 ring-sky-200", tag: "bg-sky-200 text-sky-900", letter: "M" },
-  high: { chip: "bg-amber-50 text-amber-950 ring-amber-200", tag: "bg-amber-200 text-amber-950", letter: "H" },
-  urgent: { chip: "bg-red-50 text-red-900 ring-red-200", tag: "bg-red-200 text-red-900", letter: "U" },
+  low: {
+    chip: "bg-slate-50 text-slate-700 ring-slate-200 dark:bg-slate-500/15 dark:text-slate-200 dark:ring-slate-500/30",
+    tag: "bg-slate-200 text-slate-700 dark:bg-slate-500/30 dark:text-slate-200",
+    letter: "L",
+  },
+  medium: {
+    chip: "bg-sky-50 text-sky-900 ring-sky-200 dark:bg-sky-500/15 dark:text-sky-200 dark:ring-sky-500/30",
+    tag: "bg-sky-200 text-sky-900 dark:bg-sky-500/30 dark:text-sky-100",
+    letter: "M",
+  },
+  high: {
+    chip: "bg-amber-50 text-amber-950 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-200 dark:ring-amber-500/30",
+    tag: "bg-amber-200 text-amber-950 dark:bg-amber-500/30 dark:text-amber-100",
+    letter: "H",
+  },
+  urgent: {
+    chip: "bg-red-50 text-red-900 ring-red-200 dark:bg-red-500/15 dark:text-red-200 dark:ring-red-500/30",
+    tag: "bg-red-200 text-red-900 dark:bg-red-500/30 dark:text-red-100",
+    letter: "U",
+  },
 };
 
 type Day = { key: string; day: number; inMonth: boolean };

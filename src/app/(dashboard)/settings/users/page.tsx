@@ -92,7 +92,7 @@ async function UsersList() {
                             <StatusBadge tone={u.isActive ? "success" : "muted"}>{u.isActive ? "Active" : "Inactive"}</StatusBadge>
                           </span>
                           {u.mustChangePassword && (
-                            <span className="inline-flex items-center gap-1 text-xs text-amber-700">
+                            <span className="inline-flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400">
                               <KeyRound className="size-3" aria-hidden="true" />
                               Must change password
                             </span>

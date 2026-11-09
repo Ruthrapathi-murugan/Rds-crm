@@ -71,12 +71,12 @@ export function TemporaryPasswordDialog({
             {password}
           </output>
           <Button type="button" variant="outline" onClick={copy} className="h-auto shrink-0" aria-live="polite">
-            {copied ? <Check className="size-4 text-emerald-600" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
+            {copied ? <Check className="size-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
             {copied ? "Copied" : "Copy"}
           </Button>
         </div>
-        <p className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-950">
-          <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-600" aria-hidden="true" />
+        <p className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+          <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
           This password will not be shown again. If it is lost, reset the password to get a new one.
         </p>
         <DialogFooter>

@@ -82,8 +82,8 @@ async function LeadDetail({ params }: { params: Promise<{ id: string }> }) {
       />
 
       {lead.converted && lead.convertedCustomerId && (
-        <div className="animate-fade-up flex flex-wrap items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          <BadgeCheck className="size-5 text-emerald-600" aria-hidden="true" />
+        <div className="animate-fade-up flex flex-wrap items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+          <BadgeCheck className="size-5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
           <span>
             Converted to a customer{lead.convertedAt ? ` on ${formatDate(lead.convertedAt)}` : ""}.
           </span>

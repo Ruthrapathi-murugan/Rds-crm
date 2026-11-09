@@ -193,7 +193,7 @@ async function ReceivablesTab({ range }: { range: Range }) {
     <div className="stagger flex flex-col gap-6">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {buckets.map((b, i) => (
-          <Card key={b.key} className={cn("gap-1 p-4", i > 0 && b.totalPaise > 0 && "border-red-200")}>
+          <Card key={b.key} className={cn("gap-1 p-4", i > 0 && b.totalPaise > 0 && "border-red-200 dark:border-red-500/40")}>
             <p className="text-muted-foreground text-xs font-medium">{b.label}</p>
             <p className={cn("text-xl font-semibold tabular-nums", i > 0 && b.totalPaise > 0 && "text-destructive")}>{formatINR(b.totalPaise)}</p>
             <p className="text-muted-foreground text-xs">

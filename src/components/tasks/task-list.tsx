@@ -189,7 +189,7 @@ function TaskItem({
         className={cn(
           "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300",
           "focus-visible:ring-ring/50 outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-60",
-          done ? "border-emerald-500 bg-emerald-500 text-white" : "border-input hover:border-emerald-500 hover:bg-emerald-50",
+          done ? "border-emerald-500 bg-emerald-500 text-white" : "border-input hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/15",
         )}
       >
         <Check

@@ -71,7 +71,7 @@ async function InvoiceDetail({ params }: { params: Promise<{ id: string }> }) {
         }
       />
       {invoice.storedStatus === "cancelled" && (
-        <div className="animate-fade-up rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+        <div className="animate-fade-up rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
           Cancelled {invoice.cancelledAt ? `on ${formatDateTime(invoice.cancelledAt)}` : ""}: {invoice.cancelReason}
         </div>
       )}

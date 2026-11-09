@@ -1,10 +1,11 @@
 import "server-only";
-import { Document, Page, Text, View } from "@react-pdf/renderer";
+import { Document, Image, Page, Text, View } from "@react-pdf/renderer";
 import type { TaxMode } from "@/lib/constants";
 import { amountInWords } from "@/lib/utils/amount-words";
 import { formatDate } from "@/lib/utils/date";
-import { formatBasisPoints, formatINR, paiseToRupeeString } from "@/lib/utils/money";
+import { formatBasisPoints, formatINR } from "@/lib/utils/money";
 import type { BillTo, DocumentLine, DocumentTotals } from "@/services/finance/documents";
+import { ClosingBlock, ContactFooter } from "./contact-footer";
 import { PDF_COLORS, pdfStyles as s } from "./styles";
 
 export type PdfSeller = {
@@ -17,6 +18,10 @@ export type PdfSeller = {
   phone: string;
   website?: string;
   pan?: string;
+  /** Short "City, State PIN" line for the footer contact strip. */
+  location?: string;
+  /** Logo as a PNG/JPEG data URL, or null when none is configured. */
+  logo?: string | null;
 };
 
 export type PdfBank = {
@@ -48,75 +53,82 @@ export type FinanceDocumentPdfProps = {
   stamp?: "DRAFT" | "CANCELLED" | "PAID" | null;
 };
 
-const amount = new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const n = (paise: number) => amount.format(Number(paiseToRupeeString(paise)));
+type Column = { key: string; label: string; width: string; align?: "right" | "center"; render: (line: DocumentLine) => string };
 
-type Column = { key: string; label: string; width: string; align?: "right"; render: (line: DocumentLine, i: number) => string };
-
-function columnsFor(taxMode: TaxMode): Column[] {
-  const base: Column[] = [
-    { key: "no", label: "#", width: "4%", render: (_l, i) => String(i + 1) },
-    { key: "desc", label: "Description", width: "auto", render: (l) => l.description },
-    { key: "qty", label: "Qty", width: "6%", align: "right", render: (l) => String(l.quantity) },
-    { key: "rate", label: "Rate", width: "11%", align: "right", render: (l) => n(l.unitPricePaise) },
-    { key: "disc", label: "Discount", width: "10%", align: "right", render: (l) => (l.discountPaise ? n(l.discountPaise) : "—") },
-  ];
-  if (taxMode === "none") {
-    return [...base, { key: "amt", label: "Amount", width: "14%", align: "right", render: (l) => n(l.totalPaise) }];
-  }
-  const taxable: Column = { key: "taxable", label: "Taxable", width: "12%", align: "right", render: (l) => n(l.taxablePaise) };
-  const total: Column = { key: "amt", label: "Amount", width: "13%", align: "right", render: (l) => n(l.totalPaise) };
-  if (taxMode === "intra_state") {
-    return [
-      ...base,
-      taxable,
-      {
-        key: "cgst",
-        label: "CGST",
-        width: "11%",
-        align: "right",
-        render: (l) => `${n(l.cgstPaise)}\n@${formatBasisPoints(l.taxRateBps / 2)}`,
-      },
-      {
-        key: "sgst",
-        label: "SGST",
-        width: "11%",
-        align: "right",
-        render: (l) => `${n(l.sgstPaise)}\n@${formatBasisPoints(l.taxRateBps / 2)}`,
-      },
-      total,
-    ];
-  }
+/** HSN/SAC · Description · Qty · Price · (Discount) · Total — Total is the pre-tax line value. */
+function columnsFor(items: DocumentLine[]): Column[] {
+  const hasDiscount = items.some((l) => l.discountPaise > 0);
   return [
-    ...base,
-    taxable,
-    { key: "igst", label: "IGST", width: "12%", align: "right", render: (l) => `${n(l.igstPaise)}\n@${formatBasisPoints(l.taxRateBps)}` },
-    total,
+    { key: "sac", label: "HSN/SAC", width: "13%", render: (l) => l.sacCode || "—" },
+    { key: "desc", label: "Description", width: "auto", render: (l) => l.description },
+    { key: "qty", label: "Qty", width: "8%", align: "center", render: (l) => String(l.quantity) },
+    { key: "price", label: "Price", width: "15%", align: "right", render: (l) => formatINR(l.unitPricePaise) },
+    ...(hasDiscount
+      ? [{ key: "disc", label: "Discount", width: "13%", align: "right", render: (l) => (l.discountPaise ? formatINR(l.discountPaise) : "—") } as Column]
+      : []),
+    { key: "total", label: "Total", width: "16%", align: "right", render: (l) => formatINR(l.taxablePaise) },
   ];
 }
 
-function colStyle(column: Column): { flex?: number; paddingRight?: number; width?: string; textAlign?: "left" | "right"; paddingLeft?: number } {
+function colStyle(column: Column) {
   return column.width === "auto"
-    ? { flex: 1, paddingRight: 6 }
-    : { width: column.width, textAlign: column.align ?? "left", paddingLeft: 4 };
+    ? { flex: 1, paddingRight: 8 }
+    : { width: column.width, textAlign: column.align ?? ("left" as const), paddingLeft: 4 };
+}
+
+/**
+ * Tax rows for the totals block, one per GST rate ("CGST (9%)", "SGST (9%)" or
+ * "IGST (18%)"). If the per-rate sums ever disagree with the stored totals,
+ * fall back to unlabelled rows so the printed figures always add up.
+ */
+function taxRows(taxMode: TaxMode, items: DocumentLine[], totals: DocumentTotals): [string, number][] {
+  if (taxMode === "none") return [];
+  const byRate = new Map<number, { cgst: number; sgst: number; igst: number }>();
+  for (const line of items) {
+    if (line.taxRateBps <= 0) continue;
+    const entry = byRate.get(line.taxRateBps) ?? { cgst: 0, sgst: 0, igst: 0 };
+    entry.cgst += line.cgstPaise;
+    entry.sgst += line.sgstPaise;
+    entry.igst += line.igstPaise;
+    byRate.set(line.taxRateBps, entry);
+  }
+  const rates = [...byRate.entries()].sort(([a], [b]) => a - b);
+  if (taxMode === "intra_state") {
+    const cgst = rates.reduce((acc, [, v]) => acc + v.cgst, 0);
+    const sgst = rates.reduce((acc, [, v]) => acc + v.sgst, 0);
+    if (cgst !== totals.cgstPaise || sgst !== totals.sgstPaise) {
+      return [
+        ["CGST", totals.cgstPaise],
+        ["SGST", totals.sgstPaise],
+      ];
+    }
+    return rates.flatMap(([bps, v]): [string, number][] => [
+      [`CGST (${formatBasisPoints(bps / 2)})`, v.cgst],
+      [`SGST (${formatBasisPoints(bps / 2)})`, v.sgst],
+    ]);
+  }
+  const igst = rates.reduce((acc, [, v]) => acc + v.igst, 0);
+  if (igst !== totals.igstPaise) return [["IGST", totals.igstPaise]];
+  return rates.map(([bps, v]): [string, number] => [`IGST (${formatBasisPoints(bps)})`, v.igst]);
 }
 
 export function FinanceDocumentPdf(props: FinanceDocumentPdfProps) {
-  const columns = columnsFor(props.taxMode);
-  const { totals } = props;
+  const { totals, seller, billTo } = props;
+  const columns = columnsFor(props.items);
   const isInvoice = props.kind === "invoice";
   const sellerLines = [
-    props.seller.address,
-    [props.seller.phone, props.seller.email].filter(Boolean).join(" · "),
-    props.seller.website,
-    props.seller.gstin ? `GSTIN: ${props.seller.gstin}` : "",
-    props.seller.pan ? `PAN: ${props.seller.pan}` : "",
+    seller.address,
+    seller.phone ? `Ph: ${seller.phone}` : "",
+    seller.email,
+    seller.gstin ? `GSTIN: ${seller.gstin}` : "",
+    seller.pan ? `PAN: ${seller.pan}` : "",
   ].filter(Boolean);
+  const billToAddress = [billTo.address, [billTo.city, billTo.state].filter(Boolean).join(", ")].filter(Boolean).join(", ");
+  const showBalance = isInvoice && props.amountPaidPaise !== undefined && props.amountPaidPaise > 0;
 
   return (
-    <Document title={`${props.title} ${props.number}`} author={props.seller.name} creator="RDS CRM" producer="RDS CRM">
-      <Page size="A4" style={s.page} wrap>
-        <View style={s.brandBar} fixed />
+    <Document title={`${props.title} ${props.number}`} author={seller.name} creator="RDS CRM" producer="RDS CRM">
+      <Page size="A4" style={[s.page, { paddingBottom: 96 }]} wrap>
         {props.stamp && (
           <Text
             style={[s.stamp, { color: props.stamp === "PAID" ? PDF_COLORS.success : props.stamp === "CANCELLED" ? PDF_COLORS.danger : PDF_COLORS.muted }]}
@@ -126,138 +138,112 @@ export function FinanceDocumentPdf(props: FinanceDocumentPdfProps) {
           </Text>
         )}
 
-        {/* Header */}
-        <View style={[s.between, { marginBottom: 18 }]}>
-          <View style={{ width: "58%" }}>
-            <Text style={s.companyName}>{props.seller.name}</Text>
+        {/* Header: logo, title and number on the left; seller details on the right */}
+        <View style={[s.between, { alignItems: "flex-start" }]}>
+          <View style={{ width: "45%" }}>
+            {seller.logo ? (
+              // eslint-disable-next-line jsx-a11y/alt-text -- react-pdf's Image has no alt prop
+              <Image src={seller.logo} style={s.logo} />
+            ) : null}
+            <Text style={[s.docTitle, { marginTop: seller.logo ? 12 : 0 }]}>{props.title.toUpperCase()}</Text>
+            <Text style={s.docNumber}>
+              <Text style={s.bold}>{isInvoice ? "Invoice No:" : "Quotation No:"}</Text> {props.number}
+            </Text>
+          </View>
+          <View style={{ width: "53%", alignItems: "flex-end" }}>
+            <Text style={s.sellerName}>{seller.name}</Text>
             {sellerLines.map((line) => (
-              <Text key={line} style={[s.muted, { marginTop: 2 }]}>
+              <Text key={line} style={s.sellerLine}>
                 {line}
               </Text>
             ))}
           </View>
-          <View style={{ width: "40%", alignItems: "flex-end" }}>
-            <Text style={s.title}>{props.title.toUpperCase()}</Text>
-            <View style={{ marginTop: 8, alignItems: "flex-end" }}>
-              <Text style={s.semibold}>{props.number}</Text>
-              <Text style={[s.muted, { marginTop: 2 }]}>
-                {isInvoice ? "Invoice date" : "Date"}: {formatDate(props.issueDate)}
+        </View>
+
+        <View style={s.rule} />
+
+        {/* Bill to on the left; dates on the right */}
+        <View style={[s.between, { alignItems: "flex-start", marginBottom: 22 }]}>
+          <View style={{ width: "60%" }}>
+            <Text style={s.billLabel}>{isInvoice ? "BILL TO:" : "PREPARED FOR:"}</Text>
+            <Text style={s.billName}>{billTo.businessName || billTo.name}</Text>
+            {billTo.businessName && billTo.name ? <Text>Attn: {billTo.name}</Text> : null}
+            {billTo.phone ? <Text>Ph: {billTo.phone}</Text> : null}
+            {billTo.gstin ? <Text>GSTIN: {billTo.gstin}</Text> : null}
+            {billTo.email ? <Text>{billTo.email}</Text> : null}
+            {billToAddress ? <Text>{billToAddress}</Text> : null}
+            {props.placeOfSupply ? (
+              <Text style={[s.muted, { marginTop: 4 }]}>
+                Place of supply: {props.placeOfSupply}
+                {billTo.stateCode ? ` (${billTo.stateCode})` : ""}
               </Text>
-              <Text style={s.muted}>
-                {isInvoice ? "Due date" : "Valid until"}: {formatDate(props.secondaryDate)}
-              </Text>
+            ) : null}
+          </View>
+          <View style={{ width: "36%" }}>
+            <View style={s.dateRow}>
+              <Text style={s.dateLabel}>{isInvoice ? "Invoice Date:" : "Date:"}</Text>
+              <Text>{formatDate(props.issueDate)}</Text>
+            </View>
+            <View style={s.dateRow}>
+              <Text style={s.dateLabel}>{isInvoice ? "Due Date:" : "Valid Until:"}</Text>
+              <Text>{formatDate(props.secondaryDate)}</Text>
             </View>
           </View>
         </View>
 
-        {/* Parties */}
-        <View style={[s.row, { gap: 10, marginBottom: 16 }]}>
-          <View style={[s.box, { flex: 1 }]}>
-            <Text style={s.label}>{isInvoice ? "Bill to" : "Prepared for"}</Text>
-            <Text style={s.bold}>{props.billTo.businessName || props.billTo.name}</Text>
-            {props.billTo.businessName && <Text>{props.billTo.name}</Text>}
-            {[props.billTo.address, [props.billTo.city, props.billTo.state].filter(Boolean).join(", ")]
-              .filter(Boolean)
-              .map((line) => (
-                <Text key={line} style={s.muted}>
-                  {line}
-                </Text>
-              ))}
-            {[props.billTo.phone, props.billTo.email].filter(Boolean).length > 0 && (
-              <Text style={s.muted}>{[props.billTo.phone, props.billTo.email].filter(Boolean).join(" · ")}</Text>
-            )}
-            {props.billTo.gstin && <Text style={[s.semibold, { marginTop: 2 }]}>GSTIN: {props.billTo.gstin}</Text>}
-          </View>
-          <View style={[s.box, { width: "36%" }]}>
-            <Text style={s.label}>Tax treatment</Text>
-            <Text style={s.semibold}>
-              {props.taxMode === "none"
-                ? "GST not charged"
-                : props.taxMode === "intra_state"
-                  ? "Intra-state supply (CGST + SGST)"
-                  : "Inter-state supply (IGST)"}
-            </Text>
-            {props.placeOfSupply ? (
-              <Text style={[s.muted, { marginTop: 4 }]}>
-                Place of supply: {props.placeOfSupply}
-                {props.billTo.stateCode ? ` (${props.billTo.stateCode})` : ""}
-              </Text>
-            ) : null}
-          </View>
-        </View>
-
         {/* Line items */}
-        <View style={s.tableHeader} fixed>
+        <View style={s.itemsHeader} fixed>
           {columns.map((column) => (
             <Text key={column.key} style={colStyle(column)}>
-              {column.label}
+              {column.label.toUpperCase()}
             </Text>
           ))}
         </View>
         {props.items.map((line, index) => (
-          <View key={index} style={[s.tableRow, index % 2 === 1 ? { backgroundColor: PDF_COLORS.stripe } : {}]} wrap={false}>
+          <View key={index} style={s.itemsRow} wrap={false}>
             {columns.map((column) => (
-              <View key={column.key} style={colStyle(column)}>
-                <Text>{column.render(line, index)}</Text>
-                {column.key === "desc" && line.sacCode ? <Text style={[s.small, s.muted]}>SAC/HSN {line.sacCode}</Text> : null}
-              </View>
+              <Text key={column.key} style={colStyle(column)}>
+                {column.render(line)}
+              </Text>
             ))}
           </View>
         ))}
 
-        {/* Totals */}
-        <View style={[s.between, { marginTop: 14 }]} wrap={false}>
-          <View style={{ width: "52%", paddingRight: 12 }}>
+        {/* Amount in words on the left; totals on the right */}
+        <View style={[s.between, { marginTop: 18, alignItems: "flex-start" }]} wrap={false}>
+          <View style={{ width: "48%", paddingRight: 12 }}>
             <Text style={s.label}>Amount in words</Text>
             <Text style={s.semibold}>{amountInWords(totals.totalPaise)}</Text>
           </View>
           <View style={{ width: "44%" }}>
             <View style={s.totalsRow}>
-              <Text style={s.muted}>Subtotal</Text>
+              <Text style={s.totalsLabel}>Subtotal:</Text>
               <Text>{formatINR(totals.subtotalPaise)}</Text>
             </View>
             {totals.discountPaise > 0 && (
               <View style={s.totalsRow}>
-                <Text style={s.muted}>Discount</Text>
+                <Text style={s.totalsLabel}>Discount:</Text>
                 <Text>− {formatINR(totals.discountPaise)}</Text>
               </View>
             )}
-            {props.taxMode !== "none" && (
-              <View style={s.totalsRow}>
-                <Text style={s.muted}>Taxable value</Text>
-                <Text>{formatINR(totals.taxablePaise)}</Text>
+            {taxRows(props.taxMode, props.items, totals).map(([label, paise]) => (
+              <View key={label} style={s.totalsRow}>
+                <Text style={s.totalsLabel}>{label}:</Text>
+                <Text>{formatINR(paise)}</Text>
               </View>
-            )}
-            {props.taxMode === "intra_state" && (
-              <>
-                <View style={s.totalsRow}>
-                  <Text style={s.muted}>CGST</Text>
-                  <Text>{formatINR(totals.cgstPaise)}</Text>
-                </View>
-                <View style={s.totalsRow}>
-                  <Text style={s.muted}>SGST</Text>
-                  <Text>{formatINR(totals.sgstPaise)}</Text>
-                </View>
-              </>
-            )}
-            {props.taxMode === "inter_state" && (
-              <View style={s.totalsRow}>
-                <Text style={s.muted}>IGST</Text>
-                <Text>{formatINR(totals.igstPaise)}</Text>
-              </View>
-            )}
-            <View style={s.grandTotal}>
-              <Text>Total</Text>
+            ))}
+            <View style={s.totalDue}>
+              <Text>{isInvoice ? "Total Due:" : "Total:"}</Text>
               <Text>{formatINR(totals.totalPaise)}</Text>
             </View>
-            {isInvoice && props.amountPaidPaise !== undefined && props.amountPaidPaise > 0 && (
+            {showBalance && (
               <>
                 <View style={[s.totalsRow, { marginTop: 4 }]}>
-                  <Text style={s.muted}>Amount received</Text>
-                  <Text>{formatINR(props.amountPaidPaise)}</Text>
+                  <Text style={s.totalsLabel}>Amount received:</Text>
+                  <Text>{formatINR(props.amountPaidPaise ?? 0)}</Text>
                 </View>
                 <View style={s.totalsRow}>
-                  <Text style={s.bold}>Balance due</Text>
+                  <Text style={s.bold}>Balance due:</Text>
                   <Text style={s.bold}>{formatINR(props.balancePaise ?? 0)}</Text>
                 </View>
               </>
@@ -266,7 +252,7 @@ export function FinanceDocumentPdf(props: FinanceDocumentPdfProps) {
         </View>
 
         {/* Payment details, notes and terms */}
-        <View style={[s.row, { gap: 10, marginTop: 18 }]} wrap={false}>
+        <View style={[s.row, { gap: 10, marginTop: 20 }]} wrap={false}>
           {props.bank && (props.bank.bankAccountNumber || props.bank.upiId) ? (
             <View style={[s.box, { flex: 1 }]}>
               <Text style={s.label}>Payment details</Text>
@@ -291,12 +277,22 @@ export function FinanceDocumentPdf(props: FinanceDocumentPdfProps) {
           </View>
         ) : null}
 
-        <View style={s.footer} fixed>
-          <Text>
-            {props.title} {props.number} · {props.seller.name}
-          </Text>
-          <Text render={({ pageNumber, totalPages }) => `This is a computer-generated document · Page ${pageNumber} of ${totalPages}`} />
-        </View>
+        <ClosingBlock message="Thank you for your business!" />
+
+        <ContactFooter
+          location={seller.location}
+          email={seller.email}
+          website={seller.website}
+          meta={
+            <>
+              <Text>
+                {props.title} {props.number}
+              </Text>
+              {/* No "Page X of Y": react-pdf drops render-prop text on pages with a lineHeight. */}
+              <Text>Computer-generated document</Text>
+            </>
+          }
+        />
       </Page>
     </Document>
   );

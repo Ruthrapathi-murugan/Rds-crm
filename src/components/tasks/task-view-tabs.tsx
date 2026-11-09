@@ -47,7 +47,7 @@ export function TaskViewTabs({ active, counts }: { active: TaskView | "calendar"
             <span
               className={cn(
                 "rounded-full px-1.5 text-xs tabular-nums",
-                selected ? "bg-primary-foreground/20" : alert ? "bg-red-100 font-semibold text-red-800" : "bg-muted text-muted-foreground",
+                selected ? "bg-primary-foreground/20" : alert ? "bg-red-100 font-semibold text-red-800 dark:bg-red-500/20 dark:text-red-300" : "bg-muted text-muted-foreground",
               )}
             >
               {nf.format(counts[tab.value])}

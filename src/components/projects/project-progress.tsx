@@ -79,7 +79,7 @@ export function ProjectProgress({
             </>
           )}
           {state === "saved" && (
-            <span className="animate-fade-in inline-flex items-center gap-1 text-emerald-700">
+            <span className="animate-fade-in inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
               <Check className="size-3.5" aria-hidden="true" /> Saved
             </span>
           )}

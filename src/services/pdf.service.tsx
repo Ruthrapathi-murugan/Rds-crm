@@ -3,6 +3,7 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { NotFoundError } from "@/lib/errors";
 import { FinanceDocumentPdf, type PdfBank, type PdfSeller } from "@/lib/pdf/document-pdf";
 import { registerPdfFonts } from "@/lib/pdf/fonts";
+import { getPdfLogo } from "@/lib/pdf/logo";
 import { ReceiptPdf } from "@/lib/pdf/receipt-pdf";
 import { PAYMENT_METHOD_LABELS } from "@/lib/constants";
 import type { SessionUser } from "@/types";
@@ -24,9 +25,10 @@ function bankOf(settings: CompanySettings): PdfBank {
   };
 }
 
-function sellerOf(settings: CompanySettings, frozen?: Omit<PdfSeller, "website" | "pan"> | null): PdfSeller {
+function sellerOf(settings: CompanySettings, frozen?: Omit<PdfSeller, "website" | "pan" | "location" | "logo"> | null): PdfSeller {
   const base = frozen ?? sellerSnapshot(settings);
-  return { ...base, website: settings.website, pan: settings.pan };
+  const location = [settings.city, [settings.state, settings.pincode].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+  return { ...base, website: settings.website, pan: settings.pan, location, logo: getPdfLogo() };
 }
 
 const fileSafe = (text: string) => text.replace(/[^A-Za-z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
