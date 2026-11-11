@@ -1,0 +1,9 @@
+# Netlify build settings. The build command and other site settings stay in the
+# Netlify UI; this file only adds what is listed here.
+
+[build.environment]
+  # SMTP_HOST is a public mail-server name (e.g. smtp.gmail.com), not a secret.
+  # Nodemailer bundles a list of well-known providers' hosts into the server
+  # chunk, so the scanner would otherwise flag it. Real secrets (SMTP_PASSWORD,
+  # AUTH_SECRET, MONGODB_URI, CRON_SECRET) are still scanned.
+  SECRETS_SCAN_OMIT_KEYS = "SMTP_HOST"
