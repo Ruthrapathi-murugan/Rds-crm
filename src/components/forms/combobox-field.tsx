@@ -15,6 +15,8 @@ import type { Option } from "@/types";
  * Searchable single-select. Give it static `options`, or an `optionsUrl`
  * that returns Option[] for `?q=` (searched on the server). Pass
  * `initialOptions` so an existing value shows its label before any search.
+ * `customOption` turns a typed query into an extra choice (e.g. a code that
+ * is not in the list); it also labels a saved value that is not an option.
  */
 export function ComboboxField<T extends FieldValues>({
   control,
@@ -32,6 +34,7 @@ export function ComboboxField<T extends FieldValues>({
   emptyText = "No matches found.",
   clearable = true,
   onSelectOption,
+  customOption,
 }: {
   control: Control<T>;
   name: FieldPath<T>;
@@ -48,6 +51,7 @@ export function ComboboxField<T extends FieldValues>({
   emptyText?: string;
   clearable?: boolean;
   onSelectOption?: (option: Option | null) => void;
+  customOption?: (query: string) => Option | null;
 }) {
   const id = useId();
   const [open, setOpen] = useState(false);
@@ -86,15 +90,19 @@ export function ComboboxField<T extends FieldValues>({
     if (optionsUrl) return remote;
     const q = query.trim().toLowerCase();
     const all = staticOptions ?? [];
-    return q ? all.filter((o) => `${o.label} ${o.description ?? ""}`.toLowerCase().includes(q)) : all;
-  }, [optionsUrl, remote, staticOptions, query]);
+    const matches = q ? all.filter((o) => `${o.label} ${o.description ?? ""}`.toLowerCase().includes(q)) : all;
+    const custom = customOption?.(query);
+    return custom && !matches.some((o) => o.value === custom.value) ? [...matches, custom] : matches;
+  }, [optionsUrl, remote, staticOptions, query, customOption]);
 
   return (
     <Controller
       control={control}
       name={name}
       render={({ field, fieldState }) => {
-        const selected = field.value ? findOption(String(field.value)) : undefined;
+        const selected = field.value
+          ? (findOption(String(field.value)) ?? customOption?.(String(field.value)) ?? undefined)
+          : undefined;
         return (
           <Field data-invalid={fieldState.invalid} className={className}>
             <FieldLabel htmlFor={id}>

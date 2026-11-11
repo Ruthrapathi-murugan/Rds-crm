@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { ComboboxField } from "@/components/forms/combobox-field";
 import { MoneyField, NumberField, SelectField, SwitchField, TextareaField, TextField } from "@/components/forms/fields";
 import { FormSheet } from "@/components/forms/form-sheet";
 import { FieldGroup, FieldSeparator } from "@/components/ui/field";
 import { invalidateOptions } from "@/hooks/use-options";
 import { api, handleFormError } from "@/lib/client/api";
+import { customSacOption, SAC_OPTIONS } from "@/lib/sac-codes";
 import { PRICING_UNIT_LABELS, PRICING_UNITS, SERVICE_CATEGORIES, SERVICE_CATEGORY_LABELS, optionsOf, type ServiceCategory } from "@/lib/constants";
 import { serviceFormSchema, type ServiceFormInput } from "@/lib/validations/service";
 
@@ -101,7 +103,17 @@ export function ServiceFormSheet({
         <div className="grid gap-4 sm:grid-cols-2">
           <MoneyField control={form.control} name="basePrice" label="Base price" description="Leave blank to quote per client." />
           <SelectField control={form.control} name="pricingUnit" label="Billed" options={optionsOf(PRICING_UNITS, PRICING_UNIT_LABELS)} required />
-          <TextField control={form.control} name="sacCode" label="SAC code" inputMode="numeric" maxLength={8} placeholder="e.g. 998314" />
+          <ComboboxField
+            control={form.control}
+            name="sacCode"
+            label="SAC code"
+            options={SAC_OPTIONS}
+            customOption={customSacOption}
+            placeholder="Choose code"
+            searchPlaceholder="Search code or service, or type a code…"
+            emptyText="No match. Type a 4–8 digit code to use it."
+            description="Filled in automatically on invoice and quotation lines for this service."
+          />
           <SelectField
             control={form.control}
             name="defaultTaxRate"

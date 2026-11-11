@@ -8,7 +8,7 @@ import { useFieldArray, useForm, useWatch, type Resolver } from "react-hook-form
 import { toast } from "sonner";
 import { z } from "zod";
 import { ComboboxField } from "@/components/forms/combobox-field";
-import { DateField, MoneyField, NumberField, SelectField, TextareaField, TextField } from "@/components/forms/fields";
+import { DateField, MoneyField, NumberField, SelectField, TextareaField } from "@/components/forms/fields";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FieldGroup } from "@/components/ui/field";
@@ -18,6 +18,7 @@ import { TAX_MODE_LABELS, TAX_MODES, type TaxMode } from "@/lib/constants";
 import { computeLine, invoiceTitle } from "@/lib/finance/document-calc";
 import { EMPTY_LINE } from "@/lib/finance/editor-defaults";
 import { cn } from "@/lib/utils";
+import { customSacOption, SAC_OPTIONS } from "@/lib/sac-codes";
 import { formatBasisPoints, formatINR, paiseToInput } from "@/lib/utils/money";
 import { lineItemInput, type LineItemInput } from "@/lib/validations/finance";
 import { dateInput, objectId, optionalObjectId, optionalText } from "@/lib/validations/common";
@@ -305,7 +306,17 @@ export function DocumentEditor({
                       onSelectOption={(option) => applyService(index, option as ServiceOptionLite | null)}
                       className="md:col-span-4"
                     />
-                    <TextField control={form.control} name={`items.${index}.sacCode`} label="SAC / HSN" inputMode="numeric" className="md:col-span-2" />
+                    <ComboboxField
+                      control={form.control}
+                      name={`items.${index}.sacCode`}
+                      label="SAC / HSN"
+                      options={SAC_OPTIONS}
+                      customOption={customSacOption}
+                      placeholder="Choose code"
+                      searchPlaceholder="Search code or service, or type a code…"
+                      emptyText="No match. Type a 4–8 digit code to use it."
+                      className="md:col-span-2"
+                    />
                     <TextareaField control={form.control} name={`items.${index}.description`} label="Description" rows={2} required className="md:col-span-6" />
                     <NumberField control={form.control} name={`items.${index}.quantity`} label="Qty" min={1} required className="md:col-span-1" />
                     <MoneyField control={form.control} name={`items.${index}.unitPrice`} label="Unit price" className="md:col-span-2" />
