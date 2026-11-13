@@ -43,3 +43,6 @@ next-env.d.ts
 
 # local development database
 /.data/
+
+# Private import data (customer details)
+/imports/

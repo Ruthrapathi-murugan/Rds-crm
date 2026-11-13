@@ -1,7 +1,7 @@
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 
-/** RDS monogram: a rounded square in the brand primary with an "R" mark. */
+/** RDS monogram: a rounded square in the violet → blue brand gradient with an "R" mark. */
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg
@@ -9,10 +9,17 @@ export function LogoMark({ className }: { className?: string }) {
       aria-hidden="true"
       className={cn("size-8 shrink-0", className)}
     >
-      <rect width="32" height="32" rx="8" className="fill-primary" />
+      {/* Identical definition in every instance, so a repeated id is harmless. */}
+      <defs>
+        <linearGradient id="rds-logo-gradient" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" style={{ stopColor: "var(--brand-from)" }} />
+          <stop offset="1" style={{ stopColor: "var(--brand-to)" }} />
+        </linearGradient>
+      </defs>
+      <rect width="32" height="32" rx="8" fill="url(#rds-logo-gradient)" />
       <path
         d="M10 23V9h6.2c3 0 5 1.8 5 4.4 0 2-1.1 3.4-2.9 4L22 23h-3.4l-3.3-5.2H13.2V23H10Zm3.2-8h2.8c1.3 0 2-.6 2-1.6s-.7-1.6-2-1.6h-2.8V15Z"
-        className="fill-primary-foreground"
+        fill="white"
       />
     </svg>
   );

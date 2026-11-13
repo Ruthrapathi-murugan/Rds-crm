@@ -112,6 +112,9 @@ function taxRows(taxMode: TaxMode, items: DocumentLine[], totals: DocumentTotals
   return rates.map(([bps, v]): [string, number] => [`IGST (${formatBasisPoints(bps)})`, v.igst]);
 }
 
+/** About this many rows fit on page 1 beside the header and totals; longer tables repeat their header. */
+const REPEAT_HEADER_AFTER_ROWS = 15;
+
 export function FinanceDocumentPdf(props: FinanceDocumentPdfProps) {
   const { totals, seller, billTo } = props;
   const columns = columnsFor(props.items);
@@ -128,7 +131,8 @@ export function FinanceDocumentPdf(props: FinanceDocumentPdfProps) {
 
   return (
     <Document title={`${props.title} ${props.number}`} author={seller.name} creator="RDS CRM" producer="RDS CRM">
-      <Page size="A4" style={[s.page, { paddingBottom: 96 }]} wrap>
+      {/* The contact footer's top edge sits ~60pt above the page bottom; 72 keeps a small gap. */}
+      <Page size="A4" style={[s.page, { paddingBottom: 72 }]} wrap>
         {props.stamp && (
           <Text
             style={[s.stamp, { color: props.stamp === "PAID" ? PDF_COLORS.success : props.stamp === "CANCELLED" ? PDF_COLORS.danger : PDF_COLORS.muted }]}
@@ -163,7 +167,7 @@ export function FinanceDocumentPdf(props: FinanceDocumentPdfProps) {
         <View style={s.rule} />
 
         {/* Bill to on the left; dates on the right */}
-        <View style={[s.between, { alignItems: "flex-start", marginBottom: 22 }]}>
+        <View style={[s.between, { alignItems: "flex-start", marginBottom: 16 }]}>
           <View style={{ width: "60%" }}>
             <Text style={s.billLabel}>{isInvoice ? "BILL TO:" : "PREPARED FOR:"}</Text>
             <Text style={s.billName}>{billTo.businessName || billTo.name}</Text>
@@ -191,8 +195,9 @@ export function FinanceDocumentPdf(props: FinanceDocumentPdfProps) {
           </View>
         </View>
 
-        {/* Line items */}
-        <View style={s.itemsHeader} fixed>
+        {/* Line items. The header repeats on later pages only when the table itself can run that long;
+            otherwise a closing block that moves to page 2 would sit under an empty header. */}
+        <View style={s.itemsHeader} fixed={props.items.length > REPEAT_HEADER_AFTER_ROWS}>
           {columns.map((column) => (
             <Text key={column.key} style={colStyle(column)}>
               {column.label.toUpperCase()}
@@ -210,7 +215,7 @@ export function FinanceDocumentPdf(props: FinanceDocumentPdfProps) {
         ))}
 
         {/* Amount in words on the left; totals on the right */}
-        <View style={[s.between, { marginTop: 18, alignItems: "flex-start" }]} wrap={false}>
+        <View style={[s.between, { marginTop: 14, alignItems: "flex-start" }]} wrap={false}>
           <View style={{ width: "48%", paddingRight: 12 }}>
             <Text style={s.label}>Amount in words</Text>
             <Text style={s.semibold}>{amountInWords(totals.totalPaise)}</Text>
@@ -252,7 +257,7 @@ export function FinanceDocumentPdf(props: FinanceDocumentPdfProps) {
         </View>
 
         {/* Payment details, notes and terms */}
-        <View style={[s.row, { gap: 10, marginTop: 20 }]} wrap={false}>
+        <View style={[s.row, { gap: 10, marginTop: 16 }]} wrap={false}>
           {props.bank && (props.bank.bankAccountNumber || props.bank.upiId) ? (
             <View style={[s.box, { flex: 1 }]}>
               <Text style={s.label}>Payment details</Text>
@@ -270,14 +275,15 @@ export function FinanceDocumentPdf(props: FinanceDocumentPdfProps) {
             </View>
           ) : null}
         </View>
-        {props.terms ? (
-          <View style={{ marginTop: 14 }} wrap={false}>
-            <Text style={s.label}>Terms & conditions</Text>
-            <Text style={s.muted}>{props.terms}</Text>
-          </View>
-        ) : null}
-
-        <ClosingBlock message="Thank you for your business!" />
+        {/* Terms and the thank-you line on the left, signature space on the right */}
+        <ClosingBlock message="Thank you for your business!">
+          {props.terms ? (
+            <>
+              <Text style={s.label}>Terms & conditions</Text>
+              <Text style={s.muted}>{props.terms}</Text>
+            </>
+          ) : null}
+        </ClosingBlock>
 
         <ContactFooter
           location={seller.location}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AppBackground } from "@/components/layout/app-background";
 import { signOut } from "@/components/layout/user-menu";
 import { ChangePasswordForm } from "./change-password-form";
 
@@ -12,7 +13,8 @@ import { ChangePasswordForm } from "./change-password-form";
 export function ForcePasswordChange({ name }: { name: string }) {
   const router = useRouter();
   return (
-    <main className="bg-app flex min-h-svh items-center justify-center px-4 py-10">
+    <main className="flex min-h-svh items-center justify-center px-4 py-10">
+      <AppBackground />
       <div className="animate-fade-up flex w-full max-w-md flex-col gap-6">
         <Logo />
         <Card>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Logo } from "@/components/brand/logo";
+import { AppBackground } from "@/components/layout/app-background";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { ForgotPasswordForm } from "./forgot-password-form";
 
@@ -14,11 +15,12 @@ async function RedirectIfSignedIn() {
 
 export default function ForgotPasswordPage() {
   return (
-    <main className="bg-app flex min-h-svh items-center justify-center px-4 py-12 sm:px-8">
+    <main className="flex min-h-svh items-center justify-center px-4 py-12 sm:px-8">
+      <AppBackground />
       <Suspense fallback={null}>
         <RedirectIfSignedIn />
       </Suspense>
-      <div className="animate-fade-up flex w-full max-w-sm flex-col gap-8">
+      <div className="animate-fade-up glass-panel flex w-full max-w-md flex-col gap-8 rounded-3xl p-6 sm:p-8">
         <Logo />
         <ForgotPasswordForm />
       </div>

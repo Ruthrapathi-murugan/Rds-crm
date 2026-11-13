@@ -13,7 +13,8 @@
     "test:coverage": "vitest run --coverage",
     "dev:db": "tsx scripts/dev-db.mts",
     "db:setup": "tsx --conditions=react-server scripts/db-setup.mts",
-    "create-admin": "tsx --conditions=react-server scripts/create-admin.mts"
+    "create-admin": "tsx --conditions=react-server scripts/create-admin.mts",
+    "import-invoices": "tsx --conditions=react-server scripts/import-invoices.mts"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",

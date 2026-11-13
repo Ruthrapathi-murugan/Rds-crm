@@ -1,4 +1,5 @@
 import "server-only";
+import type { ReactNode } from "react";
 import { Circle, Path, Rect, Svg, Text, View } from "@react-pdf/renderer";
 import { PDF_COLORS, pdfStyles as s } from "./styles";
 
@@ -81,11 +82,14 @@ export function ContactFooter({
   );
 }
 
-/** "Thank you" note with space for the authorised signature, kept together on the last page. */
-export function ClosingBlock({ message }: { message: string }) {
+/** "Thank you" line (with optional terms above it) and a signature space, kept together on the last page. */
+export function ClosingBlock({ message, children }: { message: string; children?: ReactNode }) {
   return (
     <View style={s.closing} wrap={false}>
-      <Text style={s.closingMessage}>{message}</Text>
+      <View style={{ flex: 1, paddingRight: 24 }}>
+        {children}
+        <Text style={[s.closingMessage, children ? { marginTop: 10 } : {}]}>{message}</Text>
+      </View>
       <View style={s.signature}>
         <View style={s.signatureLine} />
         <Text style={s.signatureLabel}>Authorised Sign</Text>

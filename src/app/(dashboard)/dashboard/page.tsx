@@ -53,7 +53,9 @@ async function Header() {
     <PageHeader
       title={
         <span className="flex items-center gap-2">
-          {greeting(now)}, {user.name.split(" ")[0]}
+          <span>
+            {greeting(now)}, <span className="text-brand">{user.name.split(" ")[0]}</span>
+          </span>
           <Sparkles className="text-primary animate-pop size-5" aria-hidden="true" />
         </span>
       }

@@ -81,7 +81,7 @@ export function GlobalSearch({ permissions }: { permissions: Permission[] }) {
       <Button
         variant="outline"
         onClick={() => setOpen(true)}
-        className="text-muted-foreground h-9 w-9 justify-start gap-2 px-0 sm:w-64 sm:px-3"
+        className="text-muted-foreground hover:border-primary/40 h-9 w-9 justify-start gap-2 rounded-xl px-0 sm:w-56 sm:px-3 lg:w-64"
         aria-label="Search"
       >
         <Search className="mx-auto size-4 sm:mx-0" aria-hidden="true" />

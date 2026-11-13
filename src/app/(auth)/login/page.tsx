@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { BarChart3, Globe, Hotel, Megaphone, ShieldCheck } from "lucide-react";
 import { Logo, LogoMark } from "@/components/brand/logo";
+import { AppBackground } from "@/components/layout/app-background";
 import { Skeleton } from "@/components/ui/skeleton";
 import { siteConfig } from "@/config/site";
 import { getCurrentUser } from "@/lib/auth/current-user";
@@ -28,7 +29,7 @@ export default function LoginPage() {
       {/* Brand panel */}
       <section
         aria-hidden="true"
-        className="animate-gradient-pan relative hidden overflow-hidden bg-[linear-gradient(135deg,oklch(0.32_0.15_268),oklch(0.45_0.19_264),oklch(0.38_0.16_285))] text-white lg:flex lg:flex-col lg:justify-between lg:p-12"
+        className="animate-gradient-pan relative hidden overflow-hidden bg-[linear-gradient(135deg,oklch(0.3_0.16_295),oklch(0.45_0.22_285),oklch(0.42_0.18_252))] text-white lg:flex lg:flex-col lg:justify-between lg:p-12"
       >
         <div className="pointer-events-none absolute inset-0">
           <div
@@ -83,11 +84,12 @@ export default function LoginPage() {
       </section>
 
       {/* Form */}
-      <section className="bg-app flex items-center justify-center px-4 py-12 sm:px-8">
+      <section className="relative flex items-center justify-center px-4 py-12 sm:px-8">
+        <AppBackground />
         <Suspense fallback={null}>
           <RedirectIfSignedIn />
         </Suspense>
-        <div className="animate-fade-up flex w-full max-w-sm flex-col gap-8">
+        <div className="animate-fade-up glass-panel flex w-full max-w-md flex-col gap-8 rounded-3xl p-6 sm:p-8">
           <Logo className="lg:hidden" />
           <div className="flex flex-col gap-2">
             <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>

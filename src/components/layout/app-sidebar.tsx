@@ -37,45 +37,56 @@ export function AppSidebar({ permissions }: { permissions: Permission[] }) {
     .sort((a, b) => b.length - a.length)[0];
 
   return (
-    <Sidebar collapsible="icon" variant="sidebar">
-      <SidebarHeader className="h-14 justify-center border-b">
+    <Sidebar collapsible="icon" variant="floating">
+      <SidebarHeader className="h-16 justify-center">
         <Link
           href="/dashboard"
-          className="flex items-center gap-2.5 overflow-hidden rounded-md px-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+          className="group/logo flex items-center gap-2.5 overflow-hidden rounded-xl px-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
           onClick={() => isMobile && setOpenMobile(false)}
         >
-          <LogoMark className="size-8 transition-transform duration-300 hover:rotate-[-6deg]" />
+          <LogoMark className="shadow-glow size-9 rounded-[10px] transition-transform duration-500 ease-out group-hover/logo:scale-105 group-hover/logo:rotate-[-8deg]" />
           <span className="flex min-w-0 flex-col leading-tight group-data-[collapsible=icon]:hidden">
-            <span className="truncate text-sm font-semibold">{siteConfig.productName}</span>
+            <span className="truncate text-sm font-semibold tracking-tight">{siteConfig.productName}</span>
             <span className="text-muted-foreground truncate text-[11px]">{siteConfig.companyName}</span>
           </span>
         </Link>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="gap-0">
         {groups.map((group) => (
-          <SidebarGroup key={group.label}>
-            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+          <SidebarGroup key={group.label} className="py-1.5">
+            <SidebarGroupLabel className="text-muted-foreground/80 text-[10.5px] font-semibold tracking-[0.08em] uppercase">
+              {group.label}
+            </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu className="gap-0.5">
                 {group.items.map((item) => {
                   const active = item.href === activeHref;
                   return (
                     <SidebarMenuItem key={item.href}>
-                      <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={active}
+                        tooltip={item.title}
+                        className="group/nav relative h-9 rounded-xl transition-[color,background-color,width,height,padding] duration-200 data-active:bg-transparent data-active:text-white data-active:hover:bg-transparent data-active:hover:text-white"
+                      >
                         <Link
                           href={item.href}
                           onClick={() => isMobile && setOpenMobile(false)}
                           aria-current={active ? "page" : undefined}
-                          className="relative transition-colors duration-200"
                         >
                           {active && (
                             <span
                               aria-hidden="true"
-                              className="bg-primary animate-fade-in absolute top-1/2 -left-2 h-5 w-1 -translate-y-1/2 rounded-r-full group-data-[collapsible=icon]:hidden"
+                              className="bg-brand shadow-glow animate-pill-in absolute inset-0 rounded-xl"
                             />
                           )}
-                          <item.icon aria-hidden="true" />
-                          <span>{item.title}</span>
+                          <item.icon
+                            aria-hidden="true"
+                            className="relative transition-transform duration-300 ease-out group-hover/nav:scale-110 group-hover/nav:-rotate-6"
+                          />
+                          <span className="relative transition-transform duration-200 group-hover/nav:translate-x-0.5">
+                            {item.title}
+                          </span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -86,8 +97,12 @@ export function AppSidebar({ permissions }: { permissions: Permission[] }) {
           </SidebarGroup>
         ))}
       </SidebarContent>
-      <SidebarFooter className="border-t group-data-[collapsible=icon]:hidden">
-        <p className="text-muted-foreground px-2 text-[11px]">{siteConfig.location}</p>
+      <SidebarFooter className="group-data-[collapsible=icon]:hidden">
+        <div className="bg-primary/8 relative overflow-hidden rounded-xl p-3 ring-1 ring-[color-mix(in_oklch,var(--primary)_18%,transparent)]">
+          <div className="bg-brand absolute -top-8 -right-8 size-20 rounded-full opacity-20 blur-2xl" aria-hidden="true" />
+          <p className="relative text-xs font-medium">{siteConfig.companyName}</p>
+          <p className="text-muted-foreground relative text-[11px]">{siteConfig.location}</p>
+        </div>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
